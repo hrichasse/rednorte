@@ -54,4 +54,12 @@ public class ListaEsperaController {
     ) {
         return ApiResponse.ok(listaEsperaService.consultaPublica(rut, codigoDerivacion));
     }
+
+    @GetMapping("/consulta-paciente")
+    public ApiResponse<List<ListaEsperaResponse>> consultaPaciente(
+            @RequestParam String rut,
+            @RequestParam String numeroSerie
+    ) {
+        return ApiResponse.ok(listaEsperaService.consultaPaciente(rut, numeroSerie));
+    }
 }

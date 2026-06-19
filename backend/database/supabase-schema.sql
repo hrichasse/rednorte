@@ -36,6 +36,7 @@ CREATE TABLE pacientes (
   email TEXT,
   telefono TEXT,
   fecha_nacimiento DATE,
+  numero_documento_hash TEXT,
   direccion TEXT,
   comuna TEXT,
   activo BOOLEAN NOT NULL DEFAULT true
@@ -43,6 +44,7 @@ CREATE TABLE pacientes (
 
 COMMENT ON TABLE pacientes IS 'Pacientes registrados en el sistema de listas de espera RedNorte.';
 COMMENT ON COLUMN pacientes.rut IS 'RUT chileno formato 12.345.678-9. Unico por paciente.';
+COMMENT ON COLUMN pacientes.numero_documento_hash IS 'Hash SHA-256 del numero de serie/documento usado para consulta publica del portal.';
 
 -- Paso 4: lista de espera
 CREATE TABLE lista_espera (
@@ -91,6 +93,7 @@ COMMENT ON COLUMN cupos_disponibles.motivo_cancelacion IS 'Razon de cancelacion 
 -- Paso 6: indices
 CREATE INDEX idx_pacientes_rut ON pacientes(rut);
 CREATE INDEX idx_pacientes_activo ON pacientes(activo) WHERE activo = true;
+CREATE INDEX idx_pacientes_documento_hash ON pacientes(numero_documento_hash);
 
 CREATE INDEX idx_lista_espera_paciente ON lista_espera(paciente_id);
 CREATE INDEX idx_lista_espera_codigo ON lista_espera(codigo_derivacion);
@@ -154,15 +157,15 @@ INSERT INTO usuarios (nombre, email, password_hash, rol, establecimiento) VALUES
   );
 
 -- Paso 9: pacientes de prueba
-INSERT INTO pacientes (nombre, rut, email, telefono, fecha_nacimiento, comuna) VALUES
-  ('Maria Gonzalez Torres', '12.345.678-9', 'maria.gonzalez@email.cl', '+56912345678', '1975-03-15', 'Arica'),
-  ('Carlos Rojas Mendoza', '15.234.567-8', 'carlos.rojas@email.cl', '+56923456789', '1968-07-22', 'Iquique'),
-  ('Ana Soto Perez', '11.987.654-3', 'ana.soto@email.cl', '+56934567890', '1982-11-08', 'Antofagasta'),
-  ('Pedro Munoz Silva', '16.543.210-7', 'pedro.munoz@email.cl', '+56945678901', '1990-05-30', 'Arica'),
-  ('Isabel Fuentes Castro', '13.876.543-2', 'isabel.fuentes@email.cl', '+56956789012', '1972-09-14', 'Iquique'),
-  ('Roberto Diaz Herrera', '14.765.432-1', 'roberto.diaz@email.cl', '+56967890123', '1965-01-25', 'Antofagasta'),
-  ('Carmen Vidal Ramos', '17.654.321-0', 'carmen.vidal@email.cl', '+56978901234', '1988-06-03', 'Arica'),
-  ('Luis Morales Pinto', '10.543.219-8', 'luis.morales@email.cl', '+56989012345', '1995-12-17', 'Iquique');
+INSERT INTO pacientes (nombre, rut, email, telefono, fecha_nacimiento, comuna, numero_documento_hash) VALUES
+  ('Maria Gonzalez Torres', '12.345.678-9', 'maria.gonzalez@email.cl', '+56912345678', '1975-03-15', 'Arica', '1a5376ad727d65213a79f3108541cf95012969a0d3064f108b5dd6e7f8c19b89'),
+  ('Carlos Rojas Mendoza', '15.234.567-8', 'carlos.rojas@email.cl', '+56923456789', '1968-07-22', 'Iquique', '342e489174cc8579d038ea97683b010fee86de2c274d2a2eafcb595b213e643f'),
+  ('Ana Soto Perez', '11.987.654-3', 'ana.soto@email.cl', '+56934567890', '1982-11-08', 'Antofagasta', '6d350a2155acf0c0cd7dcbaab0c9587520a59e5da467948d0a568f4a61c0f7a0'),
+  ('Pedro Munoz Silva', '16.543.210-7', 'pedro.munoz@email.cl', '+56945678901', '1990-05-30', 'Arica', 'bb0f6a26de562e481bcbfcc0380fe6ddc7f6bcb2a2fa5cda912087863efef205'),
+  ('Isabel Fuentes Castro', '13.876.543-2', 'isabel.fuentes@email.cl', '+56956789012', '1972-09-14', 'Iquique', '2b218a3de6e9c348c3c482caee9ed793b7963c54d3bbe757a8b1ba7f64cdde0a'),
+  ('Roberto Diaz Herrera', '14.765.432-1', 'roberto.diaz@email.cl', '+56967890123', '1965-01-25', 'Antofagasta', '185ce8fc660c5607c09afb444d81f918300a1fc7737d780e4a6c0ed5871c6dd6'),
+  ('Carmen Vidal Ramos', '17.654.321-0', 'carmen.vidal@email.cl', '+56978901234', '1988-06-03', 'Arica', 'd43403a2c3dae4e4332bf99111e6e066ecda233354d5fa44484dff058e483bb8'),
+  ('Luis Morales Pinto', '10.543.219-8', 'luis.morales@email.cl', '+56989012345', '1995-12-17', 'Iquique', '68bd1464f79367d0530965ec2f2e97be9845b19d027f759634fed555030a10e3');
 
 -- Paso 10: lista de espera de prueba
 INSERT INTO lista_espera (

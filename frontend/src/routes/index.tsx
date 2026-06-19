@@ -219,7 +219,7 @@ function LandingPage() {
             <img
               src="/images/isotipo_minsal.jpg"
               alt="RedNorte"
-              className="h-9 w-9 rounded-lg object-cover shadow-[0_0_20px_rgba(0,131,143,0.6)]"
+              className="h-9 w-9 rounded-full object-cover shadow-[0_0_20px_rgba(0,131,143,0.6)]"
             />
             <span className="text-lg font-bold tracking-tight">RedNorte</span>
           </div>
@@ -527,21 +527,74 @@ function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 bg-[#030712] py-10 text-center text-sm text-white/60">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mb-2 flex items-center justify-center gap-2">
-            <img
-              src="/images/isotipo_minsal.jpg"
-              alt="RedNorte"
-              className="h-5 w-5 rounded object-cover"
-            />
-            <span className="font-bold text-white">RedNorte</span>
+      <footer className="border-t border-white/10 bg-[#030712] text-sm text-white/65">
+        <div className="h-1.5 w-full bg-gradient-to-r from-[#0039A6] via-white to-[#D52B1E]" />
+        <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10 lg:grid-cols-[1.2fr_1fr_1fr] lg:items-start">
+          <div>
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+              <img
+                src="/images/logo-minsal-grande.png"
+                alt="Ministerio de Salud"
+                className="h-auto w-56 max-w-full object-contain"
+              />
+              <div className="border-white/10 sm:border-l sm:pl-5">
+                <div className="flex items-center gap-2">
+                  <img
+                    src="/images/isotipo_minsal.jpg"
+                    alt="RedNorte"
+                    className="h-9 w-9 rounded-full object-cover"
+                  />
+                  <span className="text-lg font-bold text-white">RedNorte</span>
+                </div>
+                <p className="mt-2 max-w-md text-sm leading-6 text-white/60">
+                  Plataforma digital para consulta, gestión y reasignación de
+                  listas de espera médica en la red asistencial del norte.
+                </p>
+              </div>
+            </div>
           </div>
-          <p>RedNorte © 2026 — Servicio Público de Salud — Norte de Chile</p>
-          <p className="mt-1 text-xs text-white/40">
-            Desarrollado por Hernan Richasse y Cristian Velásquez — GPY1101
-            DuocUC
-          </p>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white">
+              Atención ciudadana
+            </h3>
+            <div className="mt-4 space-y-3">
+              <Link to="/portal" className="block transition hover:text-white">
+                Consulta de estado de derivación
+              </Link>
+              <a
+                href="#como-funciona"
+                className="block transition hover:text-white"
+              >
+                Cómo funciona el portal
+              </a>
+              <a
+                href="#para-quien"
+                className="block transition hover:text-white"
+              >
+                Pacientes y equipos clínicos
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white">
+              Red asistencial
+            </h3>
+            <div className="mt-4 space-y-3">
+              <Link to="/login" className="block transition hover:text-white">
+                Acceso funcionarios
+              </Link>
+              <span className="block">Norte de Chile</span>
+              <span className="block">Servicio Público de Salud</span>
+            </div>
+          </div>
+        </div>
+        <div className="border-t border-white/10 px-6 py-4">
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
+            <p>RedNorte © 2026 — Servicio Público de Salud</p>
+            <p>Desarrollado por Hernan Richasse y Cristian Velásquez</p>
+          </div>
         </div>
       </footer>
     </div>

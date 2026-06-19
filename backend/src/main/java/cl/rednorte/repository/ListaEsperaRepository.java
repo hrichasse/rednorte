@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ListaEsperaRepository extends JpaRepository<ListaEspera, UUID> {
     Optional<ListaEspera> findByCodigoDerivacion(String codigoDerivacion);
     List<ListaEspera> findAllByOrderByDiasEsperaDesc();
+    List<ListaEspera> findByPacienteIdOrderByDiasEsperaDesc(UUID pacienteId);
     List<ListaEspera> findByEspecialidad(String especialidad);
     List<ListaEspera> findByPrioridad(Prioridad prioridad);
     List<ListaEspera> findByEspecialidadAndEstadoInOrderByPrioridadAscDiasEsperaDesc(

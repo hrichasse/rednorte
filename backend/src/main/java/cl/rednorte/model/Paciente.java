@@ -45,4 +45,7 @@ public class Paciente {
 
     @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
+
+    @Column(name = "numero_documento_hash")
+    private String numeroDocumentoHash;
 }

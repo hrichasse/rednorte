@@ -11,6 +11,8 @@ import cl.rednorte.model.enums.EstadoPaciente;
 import cl.rednorte.model.enums.Prioridad;
 import cl.rednorte.repository.CuposRepository;
 import cl.rednorte.repository.ListaEsperaRepository;
+import cl.rednorte.repository.PacienteRepository;
+import cl.rednorte.util.DocumentoIdentidadUtil;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.LinkedHashMap;
@@ -30,6 +32,7 @@ public class ListaEsperaService {
 
     private final ListaEsperaRepository listaEsperaRepository;
     private final CuposRepository cuposRepository;
+    private final PacienteRepository pacienteRepository;
 
     public List<ListaEsperaResponse> findAll() {
         return listaEsperaRepository.findAllByOrderByDiasEsperaDesc().stream()
@@ -79,6 +82,27 @@ public class ListaEsperaService {
         }
 
         return toResponse(lista);
+    }
+
+    public List<ListaEsperaResponse> consultaPaciente(String rut, String numeroSerie) {
+        Paciente paciente = pacienteRepository.findByRut(rut)
+                .orElseThrow(() -> new ResourceNotFoundException("No encontramos un registro con esos datos"));
+
+        String hashIngresado = DocumentoIdentidadUtil.hashNumeroSerie(numeroSerie);
+        if (paciente.getNumeroDocumentoHash() == null || !paciente.getNumeroDocumentoHash().equals(hashIngresado)) {
+            throw new ResourceNotFoundException("No encontramos un registro con esos datos");
+        }
+
+        List<ListaEsperaResponse> registros = listaEsperaRepository.findByPacienteIdOrderByDiasEsperaDesc(paciente.getId())
+                .stream()
+                .map(this::toResponse)
+                .toList();
+
+        if (registros.isEmpty()) {
+            throw new ResourceNotFoundException("No encontramos listas de espera asociadas a esos datos");
+        }
+
+        return registros;
     }
 
     public Map<String, Object> getEstadisticas() {

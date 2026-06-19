@@ -8,6 +8,8 @@ import {
   Calendar,
   AlertCircle,
   Phone,
+  ClipboardList,
+  CheckCircle2,
 } from "lucide-react";
 import { api, type ListaEsperaResponse } from "@/lib/api";
 
@@ -18,7 +20,7 @@ export const Route = createFileRoute("/portal")({
       {
         name: "description",
         content:
-          "Consulta tu posición en lista de espera médica con tu RUT y código de derivación.",
+          "Consulta tu posición en lista de espera médica con tu RUT y número de serie de documento.",
       },
     ],
   }),
@@ -32,37 +34,47 @@ type Result = {
   posicion: string;
   tiempo: string;
   fecha: string;
+  estado: string;
+  fechaIngreso: string;
+  hora: string;
   telefono?: string | null;
 };
 
 function PortalPage() {
   const [rut, setRut] = useState("");
-  const [codigo, setCodigo] = useState("");
+  const [numeroSerie, setNumeroSerie] = useState("");
+  const [results, setResults] = useState<ListaEsperaResponse[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [view, setView] = useState<"resumen" | "hora">("resumen");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<Result | null>(null);
 
   const validateRut = (v: string) => /\./.test(v) && /-/.test(v);
+  const activeResult = results[activeIndex]
+    ? toPortalResult(results[activeIndex])
+    : null;
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setResult(null);
-    if (!validateRut(rut) || codigo.trim().length < 3) {
+    setResults([]);
+    setActiveIndex(0);
+    setView("resumen");
+    if (!validateRut(rut) || numeroSerie.trim().length < 6) {
       setError(
-        "No encontramos un registro con esos datos. Verifica tu RUT y código de derivación.",
+        "No encontramos un registro con esos datos. Verifica tu RUT y N° de serie.",
       );
       return;
     }
     setLoading(true);
     try {
-      const data = await api.consultaPublica(rut, codigo);
-      setResult(toPortalResult(data));
+      const data = await api.consultaPaciente(rut, numeroSerie);
+      setResults(data);
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "No encontramos un registro con esos datos. Verifica tu RUT y código de derivación.",
+          : "No encontramos un registro con esos datos. Verifica tu RUT y N° de serie.",
       );
     } finally {
       setLoading(false);
@@ -77,7 +89,7 @@ function PortalPage() {
             <img
               src="/images/isotipo_minsal.jpg"
               alt="RedNorte"
-              className="h-9 w-9 rounded-lg object-cover"
+              className="h-9 w-9 rounded-full object-cover"
             />
             <span className="text-lg font-bold text-navy">RedNorte</span>
           </Link>
@@ -96,7 +108,8 @@ function PortalPage() {
             Consulta tu estado en lista de espera
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            Ingresa tu RUT y el código de derivación que recibiste de tu médico.
+            Ingresa tu RUT y el N° de serie de tu cédula para revisar tus
+            derivaciones y horas médicas asociadas.
           </p>
         </div>
 
@@ -123,20 +136,24 @@ function PortalPage() {
           </div>
           <div>
             <label
-              htmlFor="cod"
+              htmlFor="numero-serie"
               className="mb-1.5 block text-sm font-medium text-slate-700"
             >
-              Código de derivación
+              N° de serie del documento
             </label>
             <input
-              id="cod"
+              id="numero-serie"
               type="text"
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
-              placeholder="RN-001"
+              value={numeroSerie}
+              onChange={(e) => setNumeroSerie(e.target.value)}
+              placeholder="Ej: 123456789"
               className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-navy focus:ring-2 focus:ring-navy/20"
               required
             />
+            <p className="mt-1.5 text-xs text-slate-500">
+              Lo encuentras en tu cédula de identidad. Para este MVP se valida
+              contra datos demo.
+            </p>
           </div>
 
           {error && (
@@ -161,61 +178,147 @@ function PortalPage() {
           </button>
         </form>
 
-        {result && (
+        {activeResult && (
           <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="bg-navy px-6 py-4 text-white">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="text-xs uppercase tracking-wide text-white/70">
                     Paciente
                   </div>
                   <div className="mt-0.5 text-lg font-semibold">
-                    {result.nombre}
+                    {activeResult.nombre}
                   </div>
                 </div>
-                <span className="rounded-full bg-[#E65100] px-3 py-1 text-xs font-semibold">
-                  En espera
+                <span className="w-fit rounded-full bg-[#E65100] px-3 py-1 text-xs font-semibold">
+                  {activeResult.estado}
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
-              <Field
-                icon={<Calendar className="h-4 w-4" />}
-                label="Especialidad"
-                value={result.especialidad}
-              />
-              <Field
-                icon={<MapPin className="h-4 w-4" />}
-                label="Establecimiento"
-                value={result.establecimiento}
-              />
-              <Field
-                icon={<Search className="h-4 w-4" />}
-                label="Tu posición"
-                value={result.posicion}
-                highlight
-              />
-              <Field
-                icon={<Clock className="h-4 w-4" />}
-                label="Tiempo estimado"
-                value={result.tiempo}
-              />
+
+            {results.length > 1 && (
+              <div className="border-b border-slate-100 bg-[#F8FAFC] px-4 py-3">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Tus derivaciones
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {results.map((item, index) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveIndex(index);
+                        setView("resumen");
+                      }}
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        index === activeIndex
+                          ? "border-navy bg-navy text-white"
+                          : "border-slate-300 bg-white text-slate-700 hover:border-navy"
+                      }`}
+                    >
+                      {item.especialidad}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="border-b border-slate-100 px-6 pt-5">
+              <div className="grid grid-cols-2 rounded-lg bg-[#F4F7FB] p-1 text-sm font-semibold">
+                <button
+                  onClick={() => setView("resumen")}
+                  className={`rounded-md px-3 py-2 transition ${
+                    view === "resumen"
+                      ? "bg-white text-navy shadow-sm"
+                      : "text-slate-500"
+                  }`}
+                >
+                  Resumen
+                </button>
+                <button
+                  onClick={() => setView("hora")}
+                  className={`rounded-md px-3 py-2 transition ${
+                    view === "hora"
+                      ? "bg-white text-navy shadow-sm"
+                      : "text-slate-500"
+                  }`}
+                >
+                  Hora médica
+                </button>
+              </div>
             </div>
+
+            {view === "resumen" ? (
+              <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+                <Field
+                  icon={<Calendar className="h-4 w-4" />}
+                  label="Especialidad"
+                  value={activeResult.especialidad}
+                />
+                <Field
+                  icon={<MapPin className="h-4 w-4" />}
+                  label="Establecimiento"
+                  value={activeResult.establecimiento}
+                />
+                <Field
+                  icon={<Search className="h-4 w-4" />}
+                  label="Estado actual"
+                  value={activeResult.posicion}
+                  highlight
+                />
+                <Field
+                  icon={<ClipboardList className="h-4 w-4" />}
+                  label="Fecha de ingreso"
+                  value={activeResult.fechaIngreso}
+                />
+              </div>
+            ) : (
+              <div className="p-6">
+                <div className="rounded-xl border border-slate-200 bg-[#F8FAFC] p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal/10 text-teal">
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Próxima hora
+                      </div>
+                      <div className="mt-1 text-lg font-semibold text-navy">
+                        {activeResult.tiempo}
+                      </div>
+                      <div className="mt-1 text-sm text-slate-600">
+                        {activeResult.hora}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {["En espera", "Citado", "Atendido"].map((step) => (
+                    <div
+                      key={step}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${
+                        activeResult.estado === step
+                          ? "border-teal bg-teal/10 text-teal"
+                          : "border-slate-200 text-slate-500"
+                      }`}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      {step}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="border-t border-slate-100 bg-[#F4F7FB] px-6 py-4 text-xs text-slate-600">
-              Última actualización: {result.fecha}
+              Última actualización: {activeResult.fecha}
             </div>
             <div className="flex items-start gap-2 border-t border-slate-100 px-6 py-4 text-sm text-slate-700">
               <Phone className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
               <span>
                 Recibirás un SMS al{" "}
-                <strong>{result.telefono || "+569XXXXXXXX"}</strong> cuando tu
-                cita esté disponible.
+                <strong>{activeResult.telefono || "+569XXXXXXXX"}</strong>{" "}
+                cuando exista una actualización de tu hora médica.
               </span>
-            </div>
-            <div className="border-t border-slate-100 px-6 py-4">
-              <button className="w-full rounded-lg border border-navy/30 px-4 py-2.5 text-sm font-medium text-navy transition hover:bg-navy/5">
-                Actualizar mis datos de contacto
-              </button>
             </div>
           </div>
         )}
@@ -254,13 +357,20 @@ function toPortalResult(data: ListaEsperaResponse): Result {
     nombre: data.paciente?.nombre || "Paciente RedNorte",
     especialidad: data.especialidad,
     establecimiento: data.establecimiento,
+    estado: data.estado || "En espera",
     posicion:
       data.diasEspera != null
         ? `${data.diasEspera} días en espera`
         : "En lista de espera",
     tiempo: data.fechaCita
       ? `Cita programada para ${formatDate(data.fechaCita)}`
-      : "Por confirmar",
+      : "Hora por confirmar",
+    hora: data.horaCita
+      ? `Hora: ${data.horaCita.slice(0, 5)}`
+      : "Sin hora asignada",
+    fechaIngreso: data.fechaIngreso
+      ? formatDate(data.fechaIngreso)
+      : "Sin fecha registrada",
     fecha: new Date().toLocaleDateString("es-CL", {
       day: "numeric",
       month: "long",

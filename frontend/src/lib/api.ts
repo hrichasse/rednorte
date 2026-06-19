@@ -411,6 +411,17 @@ export const api = {
     );
   },
 
+  consultaPaciente: async (rut: string, numeroSerie: string) => {
+    const params = new URLSearchParams({ rut, numeroSerie });
+    const res = await fetch(
+      `${API_URL}/api/lista-espera/consulta-paciente?${params}`,
+    );
+    return parseResponse<ListaEsperaResponse[]>(
+      res,
+      "No se encontraron resultados",
+    );
+  },
+
   getCuposCancelados: async () => {
     const res = await fetch(`${API_URL}/api/cupos/cancelados/count`, {
       headers: {
