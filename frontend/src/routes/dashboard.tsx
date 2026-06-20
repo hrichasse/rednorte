@@ -356,6 +356,8 @@ function ListaEspera() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  // Mantiene una copia completa para abrir detalle rapido y una version plana
+  // para renderizar la tabla sin recalcular campos en cada fila.
   const syncLista = (lista: ListaEsperaResponse[]) => {
     setItems(lista);
     setRows(lista.map(mapListaEsperaRow));
@@ -416,6 +418,8 @@ function ListaEspera() {
   const onOpenDetalle = async (row: PatientRow) => {
     if (!row.id) return;
 
+    // Muestra primero el dato cacheado para que el drawer se abra inmediato,
+    // luego refresca desde backend para evitar editar informacion antigua.
     const cached = items.find((item) => item.id === row.id) ?? null;
     if (cached) {
       setSelected(cached);
@@ -452,6 +456,8 @@ function ListaEspera() {
         estado: detailForm.estado,
         notas: detailForm.notas,
       });
+      // Despues de guardar se refrescan lista y metricas porque estado y
+      // prioridad afectan tanto la tabla como los KPI superiores.
       const [lista, estadisticas] = await Promise.all([
         api.getListaEspera(),
         api.getEstadisticas(),
@@ -1041,6 +1047,8 @@ function AgendaCitas() {
     setError(null);
     setMessage(null);
     try {
+      // Crear cita impacta tres entidades en backend: paciente, lista_espera
+      // y cupo_disponible asociado a la hora creada.
       await api.crearCita(form);
       setMessage("Cita creada y guardada en la base de datos.");
       setShowForm(false);
@@ -1075,6 +1083,8 @@ function AgendaCitas() {
     setError(null);
     setMessage(null);
     try {
+      // Las sugerencias permiten reasignar un cupo liberado a pacientes con
+      // misma especialidad, priorizando urgencia y dias de espera.
       setGestionSugerencias(await api.getSugerenciasCupo(cupo.id));
     } catch (err) {
       setGestionSugerencias([]);
@@ -1093,6 +1103,8 @@ function AgendaCitas() {
     setError(null);
     setMessage(null);
     try {
+      // Cancelar libera el cupo y devuelve al paciente asignado a lista de
+      // espera para que pueda ser reagendado.
       await api.cancelarCupo(cupo.id, motivoCancelacion);
       setMessage("Cita cancelada. El paciente vuelve a lista de espera.");
       await loadAgenda();

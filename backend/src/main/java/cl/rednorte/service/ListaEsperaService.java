@@ -57,6 +57,8 @@ public class ListaEsperaService {
         ListaEspera lista = listaEsperaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro de lista de espera no encontrado"));
 
+        // El detalle del dashboard permite cambios parciales; por eso solo se
+        // actualizan los campos presentes en el request.
         if (hasText(request.prioridad())) {
             lista.setPrioridad(Prioridad.valueOf(request.prioridad()));
         }
@@ -76,6 +78,8 @@ public class ListaEsperaService {
         ListaEspera lista = listaEsperaRepository.findByCodigoDerivacion(codigo)
                 .orElseThrow(() -> new ResourceNotFoundException("No encontramos un registro con esos datos"));
 
+        // Evita exponer registros cuando el codigo existe pero pertenece a
+        // otro RUT.
         Paciente paciente = lista.getPaciente();
         if (paciente == null || !normalizarRut(paciente.getRut()).equals(normalizarRut(rut))) {
             throw new ResourceNotFoundException("No encontramos un registro con esos datos");
@@ -88,6 +92,8 @@ public class ListaEsperaService {
         Paciente paciente = pacienteRepository.findByRut(rut)
                 .orElseThrow(() -> new ResourceNotFoundException("No encontramos un registro con esos datos"));
 
+        // El N de serie no se guarda en texto plano: se compara contra el hash
+        // almacenado para la consulta publica del paciente.
         String hashIngresado = DocumentoIdentidadUtil.hashNumeroSerie(numeroSerie);
         if (paciente.getNumeroDocumentoHash() == null || !paciente.getNumeroDocumentoHash().equals(hashIngresado)) {
             throw new ResourceNotFoundException("No encontramos un registro con esos datos");
@@ -107,6 +113,9 @@ public class ListaEsperaService {
 
     public Map<String, Object> getEstadisticas() {
         List<ListaEspera> registros = listaEsperaRepository.findAll();
+
+        // Las metricas se recalculan desde la base para que el dashboard no
+        // dependa de valores hardcodeados del frontend.
         Map<String, Long> porEstado = registros.stream()
                 .filter(item -> item.getEstado() != null)
                 .collect(Collectors.groupingBy(item -> item.getEstado().getValue(), LinkedHashMap::new, Collectors.counting()));

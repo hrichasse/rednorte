@@ -13,6 +13,8 @@ public final class DocumentoIdentidadUtil {
 
     public static String hashNumeroSerie(String numeroSerie) {
         try {
+            // El portal valida el N de serie sin guardar el valor en texto
+            // plano. Para el MVP se usa SHA-256 deterministico.
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(normalizar(numeroSerie).getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hash);
@@ -22,6 +24,8 @@ public final class DocumentoIdentidadUtil {
     }
 
     private static String normalizar(String value) {
+        // Permite que el usuario ingrese el numero con puntos, guiones o
+        // espacios sin romper la comparacion con el hash almacenado.
         return value == null
                 ? ""
                 : value.replace(".", "")

@@ -50,6 +50,9 @@ function PortalPage() {
   const [error, setError] = useState<string | null>(null);
 
   const validateRut = (v: string) => /\./.test(v) && /-/.test(v);
+
+  // El portal puede recibir mas de una derivacion para un mismo paciente.
+  // activeIndex controla cual se muestra sin volver a consultar al backend.
   const activeResult = results[activeIndex]
     ? toPortalResult(results[activeIndex])
     : null;
@@ -68,6 +71,8 @@ function PortalPage() {
     }
     setLoading(true);
     try {
+      // La consulta publica no usa JWT: valida identidad con RUT + N de serie
+      // y retorna solo datos necesarios para el paciente.
       const data = await api.consultaPaciente(rut, numeroSerie);
       setResults(data);
     } catch (err) {
@@ -215,6 +220,7 @@ function PortalPage() {
                           : "border-slate-300 bg-white text-slate-700 hover:border-navy"
                       }`}
                     >
+                      {/* Permite navegar entre prestaciones sin salir del portal. */}
                       {item.especialidad}
                     </button>
                   ))}
@@ -353,6 +359,8 @@ function Field({
 }
 
 function toPortalResult(data: ListaEsperaResponse): Result {
+  // Adaptador de datos: transforma el contrato del backend en textos listos
+  // para la vista publica del paciente.
   return {
     nombre: data.paciente?.nombre || "Paciente RedNorte",
     especialidad: data.especialidad,

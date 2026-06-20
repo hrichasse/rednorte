@@ -24,6 +24,8 @@ public class JwtUtil {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + jwtConfig.getExpiration());
 
+        // El subject es el email del funcionario; el rol queda como claim para
+        // futuras reglas de autorizacion por perfil.
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)
@@ -60,6 +62,8 @@ public class JwtUtil {
 
     private SecretKey getSigningKey() {
         String secret = jwtConfig.getSecret();
+        // HS256 requiere una llave suficientemente larga; fallar temprano evita
+        // que la app arranque con una configuracion insegura.
         if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
             throw new IllegalStateException("JWT_SECRET debe tener al menos 32 caracteres");
         }

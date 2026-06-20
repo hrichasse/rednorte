@@ -1,5 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
+// Todas las respuestas del backend usan este envoltorio para mantener un
+// contrato uniforme entre errores, mensajes y datos.
 type ApiEnvelope<T> = {
   success: boolean;
   message: string;
@@ -149,6 +151,8 @@ function getAuthHeader(): HeadersInit {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// Centraliza el parseo de respuestas para que las pantallas no tengan que
+// repetir validación de JSON, manejo de errores y extracción de data.
 async function parseResponse<T>(
   res: Response,
   fallbackMessage: string,
@@ -166,6 +170,8 @@ async function parseResponse<T>(
 }
 
 export const api = {
+  // Auth: el backend genera el JWT propio y el frontend lo guarda para
+  // enviarlo en las siguientes peticiones protegidas.
   login: async (email: string, password: string) => {
     const res = await fetch(`${API_URL}/api/auth/login`, {
       method: "POST",
@@ -182,6 +188,8 @@ export const api = {
     return data;
   },
 
+  // Registro de funcionarios: en el MVP permite crear MEDICO o
+  // ADMINISTRATIVO; los ADMIN se gestionan fuera del registro publico.
   register: async (request: RegisterRequest) => {
     const res = await fetch(`${API_URL}/api/auth/register`, {
       method: "POST",
@@ -214,6 +222,7 @@ export const api = {
     return parseResponse<UsuarioPerfilResponse>(res, "Error al obtener perfil");
   },
 
+  // Lista de espera: endpoints usados por el panel interno del funcionario.
   getListaEspera: async () => {
     const res = await fetch(`${API_URL}/api/lista-espera`, {
       headers: {
@@ -268,6 +277,8 @@ export const api = {
     );
   },
 
+  // Agenda/cupos: agrupa las acciones operativas sobre citas, cancelaciones
+  // y reasignaciones de cupos medicos.
   getAgenda: async () => {
     const res = await fetch(`${API_URL}/api/cupos/agenda`, {
       headers: {
@@ -400,6 +411,8 @@ export const api = {
     return parseResponse<ReporteResponse>(res, "Error al obtener reportes");
   },
 
+  // Consulta publica antigua: se mantiene para compatibilidad con el flujo
+  // original de RUT + codigo de derivacion.
   consultaPublica: async (rut: string, codigoDerivacion: string) => {
     const params = new URLSearchParams({ rut, codigoDerivacion });
     const res = await fetch(
@@ -411,6 +424,8 @@ export const api = {
     );
   },
 
+  // Consulta publica actual: usa RUT + N de serie y devuelve todas las
+  // derivaciones asociadas al paciente validado.
   consultaPaciente: async (rut: string, numeroSerie: string) => {
     const params = new URLSearchParams({ rut, numeroSerie });
     const res = await fetch(

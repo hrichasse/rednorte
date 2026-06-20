@@ -41,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class CuposService {
 
+    // Solo pacientes urgentes o en espera pueden recibir cupos liberados.
     private static final List<EstadoPaciente> ESTADOS_REASIGNABLES = List.of(
             EstadoPaciente.URGENTE,
             EstadoPaciente.EN_ESPERA
@@ -70,10 +71,14 @@ public class CuposService {
 
     @Transactional
     public CupoResponse crearCita(NuevaCitaRequest request) {
+        // Una nueva cita reutiliza el paciente si ya existe por RUT; asi se
+        // evitan duplicados y se actualizan datos de contacto.
         Paciente paciente = pacienteRepository.findByRut(request.getRut())
                 .map(existing -> actualizarPaciente(existing, request))
                 .orElseGet(() -> crearPaciente(request));
 
+        // La cita se refleja primero como registro de lista de espera citado,
+        // porque el seguimiento del paciente vive en lista_espera.
         ListaEspera lista = ListaEspera.builder()
                 .pacienteId(paciente.getId())
                 .codigoDerivacion(generarCodigoDerivacion())
@@ -89,6 +94,8 @@ public class CuposService {
                 .build();
         lista = listaEsperaRepository.save(lista);
 
+        // El cupo guarda la fecha/hora concreta y apunta al registro de lista
+        // que lo ocupa.
         CupoDisponible cupo = CupoDisponible.builder()
                 .especialidad(request.getEspecialidad())
                 .establecimiento(request.getEstablecimiento())
@@ -104,6 +111,9 @@ public class CuposService {
 
     public ReasignacionResponse getReasignacion() {
         List<CupoDisponible> cupos = cuposReasignables();
+
+        // Consolida sugerencias de todos los cupos liberados para que el panel
+        // muestre los mejores candidatos a reasignar.
         List<SugerenciaReasignacionResponse> sugerencias = cupos.stream()
                 .flatMap(cupo -> sugerenciasParaCupo(cupo).stream())
                 .sorted(Comparator.comparing(SugerenciaReasignacionResponse::getMatch).reversed()
@@ -131,6 +141,8 @@ public class CuposService {
         ListaEspera lista = listaEsperaRepository.findById(request.getListaEsperaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente de lista de espera no encontrado"));
 
+        // Si el cupo tenia paciente anterior, primero se libera para no dejar
+        // dos pacientes asociados a la misma hora.
         liberarPacienteActual(cupo, "Cupo reasignado manualmente");
         validarAsignacion(cupo, lista);
         asignar(cupo, lista, "Cupo reasignado manualmente para " + cupo.getFechaCupo() + " " + cupo.getHoraCupo());
@@ -148,6 +160,8 @@ public class CuposService {
         CupoDisponible cupo = cuposRepository.findById(cupoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cupo no encontrado"));
 
+        // Cancelar una cita libera la relacion con lista_espera y deja el
+        // cupo disponible para analisis/reasignacion.
         liberarPacienteActual(cupo, "Cita cancelada: " + request.getMotivo());
         cupo.setEstado(EstadoCupo.CANCELADO);
         cupo.setListaEsperaId(null);
@@ -208,6 +222,7 @@ public class CuposService {
             if (candidatos.isEmpty()) {
                 continue;
             }
+            // Toma el mejor candidato ya ordenado por prioridad/dias de espera.
             asignar(cupo, candidatos.get(0), "Cupo reasignado automaticamente para " + cupo.getFechaCupo() + " " + cupo.getHoraCupo());
             asignados.add(toResponse(cuposRepository.save(cupo)));
         }

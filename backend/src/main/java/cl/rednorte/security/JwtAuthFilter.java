@@ -33,6 +33,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = header.substring(BEARER_PREFIX.length());
         try {
+            // Si el token es valido, Spring Security recibe un Authentication
+            // para que los controladores protegidos puedan ejecutarse.
             if (jwtUtil.validateToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
                 String email = jwtUtil.extractEmail(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
@@ -45,6 +47,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (RuntimeException ex) {
+            // Un token corrupto o expirado no detiene la cadena; simplemente se
+            // limpia el contexto y el endpoint protegido respondera 401.
             SecurityContextHolder.clearContext();
         }
 
