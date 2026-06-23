@@ -2,6 +2,8 @@
 
 API REST Java Spring Boot 3.2 para RedNorte, conectada a Supabase PostgreSQL por JDBC directo y autenticacion JWT propia.
 
+> Para ejecutar el proyecto completo frontend + backend, revisar el `README.md` de la raiz del repositorio.
+
 ## Requisitos
 
 - Java 17
@@ -56,7 +58,7 @@ Consulta publica de prueba:
 
 ```text
 rut: 12.345.678-9
-codigoDerivacion: RN-001
+numeroSerie: 111111111
 ```
 
 ## Ejecutar
@@ -84,6 +86,7 @@ password: rednorte2026
 - `GET /api/lista-espera`
 - `GET /api/lista-espera/estadisticas`
 - `GET /api/lista-espera/consulta-publica?rut=...&codigoDerivacion=...`
+- `GET /api/lista-espera/consulta-paciente?rut=...&numeroSerie=...`
 - `GET /api/pacientes`
 - `GET /api/pacientes/{id}`
 - `GET /api/cupos/disponibles`
